@@ -3,6 +3,7 @@ package bridgetest
 import (
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"sync"
 
 	"github.com/lampctl/go-hue/bridge"
@@ -11,6 +12,10 @@ import (
 // Bridge represents a "fake" Hue bridge that simulates the functions of an
 // actual bridge as closely as possible.
 type Bridge struct {
+
+	// URL represents the URL of the server.
+	URL string
+
 	mutex         sync.Mutex
 	mux           *http.ServeMux
 	server        *httptest.Server
@@ -19,17 +24,24 @@ type Bridge struct {
 }
 
 // New creates a new bridge.
-func New() *Bridge {
+func New() (*Bridge, error) {
+	s := httptest.NewTLSServer(nil)
+	u, err := url.Parse(s.URL)
+	if err != nil {
+		return nil, err
+	}
 	b := &Bridge{
+		URL:       u.Host,
 		mux:       http.NewServeMux(),
-		server:    httptest.NewTLSServer(nil),
+		server:    s,
 		resources: make(map[string]*bridge.Resource),
 	}
-	b.mux.HandleFunc("/api", b.requireAuth(b.handleApi))
+	b.mux.HandleFunc("/api", b.handleApi)
 	b.mux.HandleFunc("/clip/v2/resource", b.requireAuth(b.handleResource))
-	return b
+	return b, nil
 }
 
+// AddResource adds the provided resource to the bridge.
 func (b *Bridge) AddResource(r *bridge.Resource) {
 	defer b.mutex.Unlock()
 	b.mutex.Lock()
