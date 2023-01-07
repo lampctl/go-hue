@@ -25,14 +25,17 @@ type Bridge struct {
 
 // New creates a new bridge.
 func New() (*Bridge, error) {
-	s := httptest.NewTLSServer(nil)
+	var (
+		m = http.NewServeMux()
+		s = httptest.NewTLSServer(m)
+	)
 	u, err := url.Parse(s.URL)
 	if err != nil {
 		return nil, err
 	}
 	b := &Bridge{
 		URL:       u.Host,
-		mux:       http.NewServeMux(),
+		mux:       m,
 		server:    s,
 		resources: make(map[string]*bridge.Resource),
 	}

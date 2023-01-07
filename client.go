@@ -13,7 +13,8 @@ import (
 )
 
 var (
-	errInvalidResponse = errors.New("invalid response received from bridge")
+	errInvalidResponse   = errors.New("invalid response received from bridge")
+	errForbiddenResponse = errors.New("client is not authenticated")
 
 	// TODO: there must be a better way to do this
 
@@ -82,6 +83,9 @@ func (c *Client) doRequest(req *http.Request) (*bridge.Response, error) {
 		return nil, err
 	}
 	defer r.Body.Close()
+	if r.StatusCode == http.StatusForbidden {
+		return nil, errForbiddenResponse
+	}
 	response := &bridge.Response{}
 	if err := json.NewDecoder(r.Body).Decode(response); err != nil {
 		return nil, err
