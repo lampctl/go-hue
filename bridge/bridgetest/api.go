@@ -26,6 +26,14 @@ func (b *Bridge) writeJson(w http.ResponseWriter, v any) {
 	w.Write(d)
 }
 
+func (b *Bridge) writeData(w http.ResponseWriter, v any) {
+	d, err := json.Marshal(v)
+	if err != nil {
+		panic(err)
+	}
+	b.writeJson(w, &bridge.Response{Data: json.RawMessage(d)})
+}
+
 func (b *Bridge) requireAuth(fn http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("hue-application-key") != Username {
@@ -59,5 +67,5 @@ func (b *Bridge) handleResource(w http.ResponseWriter, r *http.Request) {
 	for _, r := range b.resources {
 		resources = append(resources, r)
 	}
-	b.writeJson(w, resources)
+	b.writeData(w, resources)
 }
