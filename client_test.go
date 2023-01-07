@@ -20,6 +20,15 @@ func TestClient(t *testing.T) {
 			},
 			Err: errForbiddenResponse,
 		},
+		{
+			Name: "authenticated request",
+			Fn: func(c *Client, s *bridgetest.Bridge) error {
+				c.Username = bridgetest.Username
+				_, err := c.Resources()
+				return err
+			},
+			Err: nil,
+		},
 	} {
 		s, err := bridgetest.New()
 		if err != nil {
