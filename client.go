@@ -8,6 +8,8 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+
+	"github.com/lampctl/go-hue/bridge"
 )
 
 var (
@@ -26,25 +28,6 @@ var (
 		},
 	}
 )
-
-type bridgeResponse struct {
-	Errors []any           `json:"errors"`
-	Data   json.RawMessage `json:"data"`
-}
-
-type bridgeRegistrationRequest struct {
-	DeviceType        string `json:"devicetype"`
-	GenerateClientKey bool   `json:"generateclientkey"`
-}
-
-type bridgeRegistrationResponse struct {
-	Error *struct {
-		Description string `json:"description"`
-	} `json:"error"`
-	Success *struct {
-		Username string `json:"username"`
-	} `json:"success"`
-}
 
 // Client represents a connection to a Hue bridge. Hostname must be set to the
 // address of the bridge and Username needs to be set to the application key to
@@ -89,7 +72,7 @@ func (c *Client) newRequest(method, path string, v any) (*http.Request, error) {
 	return r, nil
 }
 
-func (c *Client) doRequest(req *http.Request) (*bridgeResponse, error) {
+func (c *Client) doRequest(req *http.Request) (*bridge.Response, error) {
 	client := c.Client
 	if client == nil {
 		client = DefaultClient
@@ -99,14 +82,14 @@ func (c *Client) doRequest(req *http.Request) (*bridgeResponse, error) {
 		return nil, err
 	}
 	defer r.Body.Close()
-	response := &bridgeResponse{}
+	response := &bridge.Response{}
 	if err := json.NewDecoder(r.Body).Decode(response); err != nil {
 		return nil, err
 	}
 	return response, err
 }
 
-func (c *Client) do(method, path string, v any) (*bridgeResponse, error) {
+func (c *Client) do(method, path string, v any) (*bridge.Response, error) {
 	r, err := c.newRequest(method, path, v)
 	if err != nil {
 		return nil, err
@@ -120,7 +103,7 @@ func (c *Client) do(method, path string, v any) (*bridgeResponse, error) {
 // a second time should then succeed. Upon success, the application key will be
 // stored in the Username field of the Client.
 func (c *Client) Register(appName string) error {
-	r, err := c.newRequest(http.MethodPost, "/api", &bridgeRegistrationRequest{
+	r, err := c.newRequest(http.MethodPost, "/api", &bridge.RegistrationRequest{
 		DeviceType:        appName,
 		GenerateClientKey: true,
 	})
@@ -128,7 +111,7 @@ func (c *Client) Register(appName string) error {
 		return err
 	}
 	defer r.Body.Close()
-	responses := []*bridgeRegistrationResponse{}
+	responses := []*bridge.RegistrationResponse{}
 	if err := json.NewDecoder(r.Body).Decode(&responses); err != nil {
 		return err
 	}
@@ -146,12 +129,12 @@ func (c *Client) Register(appName string) error {
 }
 
 // Resources retrieves all of the resources on the bridge.
-func (c *Client) Resources() ([]*Resource, error) {
+func (c *Client) Resources() ([]*bridge.Resource, error) {
 	r, err := c.do(http.MethodGet, "/clip/v2/resource", nil)
 	if err != nil {
 		return nil, err
 	}
-	resources := []*Resource{}
+	resources := []*bridge.Resource{}
 	if err := json.Unmarshal(r.Data, &resources); err != nil {
 		return nil, err
 	}

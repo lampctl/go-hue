@@ -1,4 +1,8 @@
-package hue
+package bridge
+
+import (
+	"encoding/json"
+)
 
 const (
 	TypeBridgeHome   = "bridge_home"
@@ -6,6 +10,29 @@ const (
 	TypeLight        = "light"
 	TypeZone         = "zone"
 )
+
+type Response struct {
+	Errors []any           `json:"errors"`
+	Data   json.RawMessage `json:"data"`
+}
+
+type RegistrationRequest struct {
+	DeviceType        string `json:"devicetype"`
+	GenerateClientKey bool   `json:"generateclientkey"`
+}
+
+type RegistrationResponseError struct {
+	Description string `json:"description"`
+}
+
+type RegistrationResponseSuccess struct {
+	Username string `json:"username"`
+}
+
+type RegistrationResponse struct {
+	Error   *RegistrationResponseError   `json:"error"`
+	Success *RegistrationResponseSuccess `json:"success"`
+}
 
 type Owner struct {
 	RID   string `json:"rid"`
