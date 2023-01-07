@@ -49,10 +49,10 @@ type Client struct {
 	Client *http.Client
 }
 
-func (c *Client) newRequest(method, path string, v any) (*http.Request, error) {
+func (c *Client) newRequest(method, path string, data any) (*http.Request, error) {
 	var reader io.Reader
-	if v != nil {
-		b, err := json.Marshal(v)
+	if data != nil {
+		b, err := json.Marshal(data)
 		if err != nil {
 			return nil, err
 		}
@@ -73,32 +73,35 @@ func (c *Client) newRequest(method, path string, v any) (*http.Request, error) {
 	return r, nil
 }
 
-func (c *Client) doRequest(req *http.Request) (*bridge.Response, error) {
+func (c *Client) doRequest(req *http.Request, v any) error {
 	client := c.Client
 	if client == nil {
 		client = DefaultClient
 	}
 	r, err := client.Do(req)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer r.Body.Close()
 	if r.StatusCode == http.StatusForbidden {
-		return nil, errForbiddenResponse
+		return errForbiddenResponse
 	}
-	response := &bridge.Response{}
-	if err := json.NewDecoder(r.Body).Decode(response); err != nil {
-		return nil, err
+	if err := json.NewDecoder(r.Body).Decode(v); err != nil {
+		return err
 	}
-	return response, err
+	return nil
 }
 
-func (c *Client) do(method, path string, v any) (*bridge.Response, error) {
-	r, err := c.newRequest(method, path, v)
+func (c *Client) do(method, path string, data any) (*bridge.Response, error) {
+	r, err := c.newRequest(method, path, data)
 	if err != nil {
 		return nil, err
 	}
-	return c.doRequest(r)
+	v := &bridge.Response{}
+	if err := c.doRequest(r, v); err != nil {
+		return nil, err
+	}
+	return v, err
 }
 
 // Register attempts to register with the bridge and obtain an application key.
@@ -114,9 +117,8 @@ func (c *Client) Register(appName string) error {
 	if err != nil {
 		return err
 	}
-	defer r.Body.Close()
 	responses := []*bridge.RegistrationResponse{}
-	if err := json.NewDecoder(r.Body).Decode(&responses); err != nil {
+	if err := c.doRequest(r, &responses); err != nil {
 		return err
 	}
 	if len(responses) < 1 {
