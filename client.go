@@ -46,11 +46,11 @@ type bridgeRegistrationResponse struct {
 	} `json:"success"`
 }
 
-// Bridge represents a connection to a Hue bridge. Hostname must be set to the
+// Client represents a connection to a Hue bridge. Hostname must be set to the
 // address of the bridge and Username needs to be set to the application key to
 // use authenticated methods. Use the Register() method to obtain an
 // application key.
-type Bridge struct {
+type Client struct {
 
 	// Host represents the host address of the bridge.
 	Host string
@@ -65,7 +65,7 @@ type Bridge struct {
 	Client *http.Client
 }
 
-func (b *Bridge) newRequest(method, path string, v any) (*http.Request, error) {
+func (c *Client) newRequest(method, path string, v any) (*http.Request, error) {
 	var reader io.Reader
 	if v != nil {
 		b, err := json.Marshal(v)
@@ -76,21 +76,21 @@ func (b *Bridge) newRequest(method, path string, v any) (*http.Request, error) {
 	}
 	u := &url.URL{
 		Scheme: "https",
-		Host:   b.Host,
+		Host:   c.Host,
 		Path:   path,
 	}
 	r, err := http.NewRequest(method, u.String(), reader)
 	if err != nil {
 		return nil, err
 	}
-	if len(b.Username) != 0 {
-		r.Header.Add("hue-application-key", b.Username)
+	if len(c.Username) != 0 {
+		r.Header.Add("hue-application-key", c.Username)
 	}
 	return r, nil
 }
 
-func (b *Bridge) doRequest(req *http.Request) (*bridgeResponse, error) {
-	client := b.Client
+func (c *Client) doRequest(req *http.Request) (*bridgeResponse, error) {
+	client := c.Client
 	if client == nil {
 		client = DefaultClient
 	}
@@ -106,21 +106,21 @@ func (b *Bridge) doRequest(req *http.Request) (*bridgeResponse, error) {
 	return response, err
 }
 
-func (b *Bridge) do(method, path string, v any) (*bridgeResponse, error) {
-	r, err := b.newRequest(method, path, v)
+func (c *Client) do(method, path string, v any) (*bridgeResponse, error) {
+	r, err := c.newRequest(method, path, v)
 	if err != nil {
 		return nil, err
 	}
-	return b.doRequest(r)
+	return c.doRequest(r)
 }
 
 // Register attempts to register with the bridge and obtain an application key.
 // This will likely fail the first time with an error instructing the user to
 // push the physical button on their bridge - an identical call to this method
 // a second time should then succeed. Upon success, the application key will be
-// stored in the Username field of the bridge.
-func (b *Bridge) Register(appName string) error {
-	r, err := b.newRequest(http.MethodPost, "/api", &bridgeRegistrationRequest{
+// stored in the Username field of the Client.
+func (c *Client) Register(appName string) error {
+	r, err := c.newRequest(http.MethodPost, "/api", &bridgeRegistrationRequest{
 		DeviceType:        appName,
 		GenerateClientKey: true,
 	})
@@ -141,13 +141,13 @@ func (b *Bridge) Register(appName string) error {
 	if responses[0].Success == nil {
 		return errInvalidResponse
 	}
-	b.Username = responses[0].Success.Username
+	c.Username = responses[0].Success.Username
 	return nil
 }
 
 // Resources retrieves all of the resources on the bridge.
-func (b *Bridge) Resources() ([]*Resource, error) {
-	r, err := b.do(http.MethodGet, "/clip/v2/resource", nil)
+func (c *Client) Resources() ([]*Resource, error) {
+	r, err := c.do(http.MethodGet, "/clip/v2/resource", nil)
 	if err != nil {
 		return nil, err
 	}
