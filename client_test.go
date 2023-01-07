@@ -37,7 +37,7 @@ func TestClient(t *testing.T) {
 		defer s.Close()
 		c := &Client{Host: s.URL}
 		if err := v.Fn(c, s); err != v.Err {
-			t.Fatalf("%s: %#v != %#v", v.Name, err, v.Err)
+			t.Fatalf("%s: %+v != %+v", v.Name, err, v.Err)
 		}
 	}
 }
