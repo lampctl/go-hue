@@ -26,7 +26,7 @@ func (b *Bridge) writeJson(w http.ResponseWriter, v any) {
 
 func (b *Bridge) requireAuth(fn http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Response.Header.Get("hue-application-key") != username {
+		if r.Header.Get("hue-application-key") != username {
 			http.Error(w, invalidUsernameError, http.StatusForbidden)
 			return
 		}
