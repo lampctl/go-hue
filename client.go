@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -145,4 +146,14 @@ func (c *Client) Resources() ([]*bridge.Resource, error) {
 		return nil, err
 	}
 	return resources, nil
+}
+
+// Update attempts to update the specified resource using the provided values.
+func (c *Client) Update(rType, id string, v *bridge.Resource) error {
+	_, err := c.do(
+		http.MethodPut,
+		fmt.Sprintf("/clip/v2/resource/%s/%s", rType, id),
+		v,
+	)
+	return err
 }

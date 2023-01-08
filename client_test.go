@@ -5,7 +5,13 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/lampctl/go-hue/bridge"
 	"github.com/lampctl/go-hue/bridge/bridgetest"
+)
+
+const (
+	fakeID   = "id"
+	fakeType = "type"
 )
 
 func TestClient(t *testing.T) {
@@ -60,6 +66,32 @@ func TestClient(t *testing.T) {
 				c.Username = bridgetest.Username
 				_, err := c.Resources()
 				return err
+			},
+			ReturnError: false,
+		},
+		{
+			Name: "update resource",
+			Fn: func(c *Client, s *bridgetest.Bridge) error {
+				c.Username = bridgetest.Username
+				s.AddResource(&bridge.Resource{
+					ID:   fakeID,
+					Type: fakeType,
+				})
+				if err := c.Update(
+					fakeType,
+					fakeID,
+					&bridge.Resource{On: &bridge.On{On: true}},
+				); err != nil {
+					return err
+				}
+				r, err := s.GetResource(fakeID)
+				if err != nil {
+					return err
+				}
+				if r.On == nil || r.On.On != true {
+					return errors.New("change not applied to resource")
+				}
+				return nil
 			},
 			ReturnError: false,
 		},
