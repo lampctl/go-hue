@@ -11,8 +11,12 @@ const (
 	TypeZone         = "zone"
 )
 
+type Error struct {
+	Description string `json:"description"`
+}
+
 type Response struct {
-	Errors []any           `json:"errors"`
+	Errors []*Error        `json:"errors"`
 	Data   json.RawMessage `json:"data"`
 }
 
@@ -72,4 +76,5 @@ type Resource struct {
 	Dimming  *Dimming  `json:"dimming,omitempty"`
 	Color    *Color    `json:"color,omitempty"`
 	Dynamics *Dynamics `json:"dynamics,omitempty"`
+	Type     string    `json:"type,omitempty"`
 }
