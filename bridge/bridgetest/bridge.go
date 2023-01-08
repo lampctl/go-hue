@@ -1,6 +1,7 @@
 package bridgetest
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -9,6 +10,8 @@ import (
 
 	"github.com/lampctl/go-hue/bridge"
 )
+
+var errResourceNotFound = errors.New("resource not found")
 
 // Bridge represents a "fake" Hue bridge that simulates the functions of an
 // actual bridge as closely as possible.
@@ -55,6 +58,17 @@ func (b *Bridge) AddResource(r *bridge.Resource) {
 		fmt.Sprintf("/clip/v2/resource/%s/%s", r.Type, r.ID),
 		b.requireAuth(b.handleResourceByID(r.ID)),
 	)
+}
+
+// GetResource attempts to retrieve the specified resource by its ID.
+func (b *Bridge) GetResource(id string) (*bridge.Resource, error) {
+	defer b.mutex.Unlock()
+	b.mutex.Lock()
+	r, ok := b.resources[id]
+	if !ok {
+		return nil, errResourceNotFound
+	}
+	return r, nil
 }
 
 // PushButton simulates a user pressing the button on the bridge.
