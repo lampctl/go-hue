@@ -26,6 +26,12 @@ func (b *Bridge) writeJson(w http.ResponseWriter, v any) {
 	w.Write(d)
 }
 
+func (b *Bridge) writeError(w http.ResponseWriter, desc string) {
+	b.writeJson(w, &bridge.Response{
+		Errors: []*bridge.Error{{Description: desc}},
+	})
+}
+
 func (b *Bridge) writeData(w http.ResponseWriter, v any) {
 	d, err := json.Marshal(v)
 	if err != nil {
