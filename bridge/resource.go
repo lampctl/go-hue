@@ -113,3 +113,7 @@ func deepCopy(dest, src any) {
 func (r *Resource) CopyFrom(v *Resource) {
 	deepCopy(r, v)
 }
+
+type EventStream struct {
+	Data []*Resource `json:"data"`
+}
