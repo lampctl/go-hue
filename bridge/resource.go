@@ -2,6 +2,7 @@ package bridge
 
 import (
 	"encoding/json"
+	"reflect"
 )
 
 const (
@@ -77,4 +78,38 @@ type Resource struct {
 	Color    *Color    `json:"color,omitempty"`
 	Dynamics *Dynamics `json:"dynamics,omitempty"`
 	Type     string    `json:"type,omitempty"`
+}
+
+func deepCopy(dest, src any) {
+	var (
+		tSrc  = reflect.TypeOf(src).Elem()
+		vDest = reflect.ValueOf(dest).Elem()
+		vSrc  = reflect.ValueOf(src).Elem()
+	)
+	for i := 0; i < tSrc.NumField(); i++ {
+		var (
+			tSrcField  = tSrc.Field(i).Type
+			vDestField = vDest.Field(i)
+			vSrcField  = vSrc.Field(i)
+		)
+		switch tSrcField.Kind() {
+		case reflect.Pointer:
+			if !vSrcField.IsNil() {
+				if vDestField.IsNil() {
+					vDestField.Set(reflect.New(tSrcField.Elem()))
+				}
+				deepCopy(vDestField.Interface(), vSrcField.Interface())
+			}
+		default:
+			if !vSrcField.IsZero() {
+				vDestField.Set(vSrcField)
+			}
+		}
+	}
+}
+
+// CopyFrom populates the resource with only the values set in the provided
+// parameter.
+func (r *Resource) CopyFrom(v *Resource) {
+	deepCopy(r, v)
 }
