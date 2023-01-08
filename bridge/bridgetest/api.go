@@ -16,20 +16,25 @@ const (
 	invalidUsernameError  = "invalid username supplied"
 )
 
-func (b *Bridge) writeJson(w http.ResponseWriter, v any) {
+func (b *Bridge) writeJson(w http.ResponseWriter, statusCode int, v any) {
 	d, err := json.Marshal(v)
 	if err != nil {
 		panic(err)
 	}
 	w.Header().Add("Content-Type", "application/json")
 	w.Header().Add("Content-Length", strconv.Itoa(len(d)))
+	w.WriteHeader(statusCode)
 	w.Write(d)
 }
 
-func (b *Bridge) writeError(w http.ResponseWriter, desc string) {
-	b.writeJson(w, &bridge.Response{
+func (b *Bridge) writeError(w http.ResponseWriter, statusCode int, desc string) {
+	b.writeJson(w, statusCode, &bridge.Response{
 		Errors: []*bridge.Error{{Description: desc}},
 	})
+}
+
+func (b *Bridge) writeHTTPError(w http.ResponseWriter, statusCode int) {
+	b.writeError(w, statusCode, http.StatusText(statusCode))
 }
 
 func (b *Bridge) writeData(w http.ResponseWriter, v any) {
@@ -37,7 +42,7 @@ func (b *Bridge) writeData(w http.ResponseWriter, v any) {
 	if err != nil {
 		panic(err)
 	}
-	b.writeJson(w, &bridge.Response{Data: json.RawMessage(d)})
+	b.writeJson(w, http.StatusOK, &bridge.Response{Data: json.RawMessage(d)})
 }
 
 func (b *Bridge) requireAuth(fn http.HandlerFunc) http.HandlerFunc {
@@ -64,7 +69,7 @@ func (b *Bridge) handleApi(w http.ResponseWriter, r *http.Request) {
 			Description: buttonNotPressedError,
 		}
 	}
-	b.writeJson(w, []*bridge.RegistrationResponse{response})
+	b.writeJson(w, http.StatusOK, []*bridge.RegistrationResponse{response})
 }
 
 func (b *Bridge) handleResource(w http.ResponseWriter, r *http.Request) {
