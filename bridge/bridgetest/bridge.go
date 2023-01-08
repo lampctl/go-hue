@@ -1,6 +1,7 @@
 package bridgetest
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -50,6 +51,10 @@ func (b *Bridge) AddResource(r *bridge.Resource) {
 	defer b.mutex.Unlock()
 	b.mutex.Lock()
 	b.resources[r.ID] = r
+	b.mux.HandleFunc(
+		fmt.Sprintf("/clip/v2/resource/%s/%s", r.Type, r.ID),
+		b.requireAuth(b.handleResourceByID(r.ID)),
+	)
 }
 
 // PushButton simulates a user pressing the button on the bridge.

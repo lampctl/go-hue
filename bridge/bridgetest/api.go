@@ -81,3 +81,25 @@ func (b *Bridge) handleResource(w http.ResponseWriter, r *http.Request) {
 	}
 	b.writeData(w, resources)
 }
+
+func (b *Bridge) handleResourceByID(id string) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer b.mutex.Unlock()
+		b.mutex.Lock()
+		if r.Method != http.MethodPut {
+			b.writeHTTPError(w, http.StatusMethodNotAllowed)
+			return
+		}
+		src := &bridge.Resource{}
+		if err := json.NewDecoder(r.Body).Decode(src); err != nil {
+			b.writeHTTPError(w, http.StatusBadRequest)
+			return
+		}
+		dest, ok := b.resources[id]
+		if !ok {
+			b.writeHTTPError(w, http.StatusNotFound)
+			return
+		}
+		dest.CopyFrom(src)
+	})
+}
