@@ -48,11 +48,12 @@ func (b *Bridge) handleApi(w http.ResponseWriter, r *http.Request) {
 	defer b.mutex.Unlock()
 	b.mutex.Lock()
 	response := &bridge.RegistrationResponse{}
-	if b.buttonPressed {
+	if b.apiRequested && b.buttonPressed {
 		response.Success = &bridge.RegistrationResponseSuccess{
 			Username: Username,
 		}
 	} else {
+		b.apiRequested = true
 		response.Error = &bridge.RegistrationResponseError{
 			Description: buttonNotPressedError,
 		}

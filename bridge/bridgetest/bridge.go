@@ -20,6 +20,7 @@ type Bridge struct {
 	mux           *http.ServeMux
 	server        *httptest.Server
 	resources     map[string]*bridge.Resource
+	apiRequested  bool
 	buttonPressed bool
 }
 
