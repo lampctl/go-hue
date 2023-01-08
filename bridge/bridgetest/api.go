@@ -101,5 +101,6 @@ func (b *Bridge) handleResourceByID(id string) http.HandlerFunc {
 			return
 		}
 		dest.CopyFrom(src)
+		b.writeData(w, dest)
 	})
 }
